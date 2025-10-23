@@ -27,24 +27,17 @@ def output_compare(dataset, models, outputs, idx):
     plt.setp(plt.gcf().get_axes(), xticks=[], yticks=[])
     fig.savefig('output_comparision.png')
 
-    # plt.imsave('test_gt.png', arr=img_gt)
-    # plt.imsave('test_u_net.png', arr=img_u_net)
-
 def _logmag(x, eps=1e-8):
-    # x: torch tensor (N,C,H,W), values in [0,1]
     F = torch.fft.fft2(x, dim=(-2, -1))        # full complex spectrum
     mag = F.abs().clamp_min(eps)               # avoid log(0)
     return torch.log(mag)                      # log-magnitude
 
 def _freq_error_map(target, pred, eps=1e-8):
-    """
-    pred/target: torch tensor (N,C,H,W) in [0,1]
-    returns: torch tensor (N,H,W) log-mag MSE per pixel in frequency plane
-    """
     Lt = _logmag(target, eps)
     Lp = _logmag(pred, eps)    # (N,C,H,W)
     err = (Lp - Lt)**2         # (N,C,H,W)
     err = err.mean(dim=1)      # average over channels -> (N,H,W)
+
     # center DC for visualization
     err = torch.fft.fftshift(err, dim=(-2, -1))
     return err
@@ -71,7 +64,7 @@ def get_error_per_radius(img2d):
     return f, error_per_radius
 
 @torch.no_grad()
-def freq_error_compare(dataset, models, idx, device, savepath='compare_freq.png',
+def freq_error_compare(dataset, models, idx, device,
                        vmin=None, vmax=None, eps=1e-8):
     noisy, original = dataset[idx]
     noisy = noisy.unsqueeze(0).to(device)   # (1,C,H,W)
@@ -124,5 +117,4 @@ def freq_error_compare(dataset, models, idx, device, savepath='compare_freq.png'
         ax.set_ylabel("log MSE")
 
     plt.title(f'Log-magnitude frequency error of im_{idx}.png')
-    fig.savefig(savepath, dpi=150)
-    return savepath
+    fig.savefig('output_compare_freq.png', dpi=150)

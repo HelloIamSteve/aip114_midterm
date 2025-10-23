@@ -85,10 +85,7 @@ def evaluate_model(model, val_loader, device):
 if __name__ == '__main__':
     # dataset
     midterm100_dataset = Midterm100(root_dir=dataset_dir, mode='val',transform=transforms.ToTensor())
-
-    # dataset_dir = os.path.join('CBSD68-dataset', 'CBSD68')
-    # cbsd68_dataset = CBSD68(root_dir=dataset_dir, noisy=25, transform=transforms.ToTensor())
-
+    
     # load model
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'using: {device}')
@@ -120,4 +117,4 @@ if __name__ == '__main__':
     output_compare(midterm100_dataset, models[1: ], outputs, idx)
     
     # frequency domain
-    freq_error_compare(midterm100_dataset, models, idx, device, savepath='output_compare_freq.png')
+    freq_error_compare(midterm100_dataset, models, idx, device)

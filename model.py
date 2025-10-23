@@ -7,7 +7,7 @@ from pytorch_wavelets import DWTForward, DWTInverse
 
 class DummyModel(nn.Module):
     def __init__(self):
-        super(DummyModel, self).__init__()
+        super().__init__()
         self.name = 'Original noisy'
 
     def forward(self, x):
@@ -16,7 +16,7 @@ class DummyModel(nn.Module):
 class FilterModel(nn.Module):
     def __init__(self, gaussian_kernel=3, gaussian_sigma=1, median_kernel=3,\
                  use_median=True, use_sharpen=True, sharpen_alpha=3):
-        super(FilterModel, self).__init__()
+        super().__init__()
 
         # Gaussian filter
         self.gaussian_kernel = gaussian_kernel
@@ -170,16 +170,11 @@ class U_Net(nn.Module):
             print(e)
 
 class DWTPCA_Downsample(nn.Module):
-    """
-    Replaces Max Pooling with a combination of DWT and a PCA-like
-    convolutional layer for downsampling, as described in the paper[cite: 61, 88].
-    The results are fused using weights alpha and beta[cite: 96].
-    """
     def __init__(self, in_channels, wave='haar', alpha=0.5, beta=0.5):
         super().__init__()
         self.dwt = DWTForward(J=1, mode='zero', wave=wave)
-        # A strided convolution acts as a learnable linear transform,
-        # similar to PCA, to extract principal features[cite: 80, 82].
+
+        # use Conv2d to downsample
         self.pca_conv = nn.Conv2d(in_channels, in_channels, kernel_size=3, stride=2, padding=1, groups=in_channels, bias=False)
         self.alpha = alpha
         self.beta = beta
@@ -187,38 +182,24 @@ class DWTPCA_Downsample(nn.Module):
     def forward(self, x):
         # DWT produces a low-pass (LL) and high-pass (LH, HL, HH) components
         ll, _ = self.dwt(x)
-        
-        # PCA-like feature extraction
+
         pca_out = self.pca_conv(x)
-        
-        # Feature fusion [cite: 96]
         fused_output = (self.alpha * ll) + (self.beta * pca_out)
         return fused_output
 
 class IDWT_Upsample(nn.Module):
-    """
-    Replaces Transpose Convolution with Inverse DWT for upsampling.
-    A 1x1 convolution is used to adjust the number of channels.
-    """
     def __init__(self, in_channels, out_channels, wave='haar'):
         super().__init__()
         self.idwt = DWTInverse(mode='zero', wave=wave)
         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
 
     def forward(self, x):
-        # x is the low-frequency component (LL) with shape (N, C, H, W)
-        
-        # Create a single zero-tensor for the high-frequency components (LH, HL, HH).
-        # The library expects a tensor of shape (N, C, 3, H, W).
         high_freq_shape = list(x.shape)
-        high_freq_shape.insert(2, 3) # Create shape [N, C, 3, H, W]
+        high_freq_shape.insert(2, 3) # shape -> [N, C, 3, H, W]
         high_freq_zeros = torch.zeros(high_freq_shape, device=x.device, dtype=x.dtype)
         
-        # Perform the inverse transform. The input must be a tuple where the 
-        # second element is a list containing the high-frequency tensor.
         upsampled = self.idwt((x, [high_freq_zeros]))
         
-        # Adjust channel dimension
         output = self.conv(upsampled)
         return output
 
