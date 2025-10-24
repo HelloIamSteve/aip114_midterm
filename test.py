@@ -85,7 +85,7 @@ def evaluate_model(model, val_loader, device):
 if __name__ == '__main__':
     # dataset
     midterm100_dataset = Midterm100(root_dir=dataset_dir, mode='val',transform=transforms.ToTensor())
-    
+
     # load model
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     print(f'using: {device}')
@@ -102,19 +102,24 @@ if __name__ == '__main__':
     models[-1].load_model('./Improved_U_Net_results/Improved_U_Net_MSELoss_best.pt')
 
     # testing
+    outputs = []
     for i, model in enumerate(models):
         loader = DataLoader(midterm100_dataset, batch_size=len(midterm100_dataset))
-        outputs,\
+        model_outputs,\
         avg_psnr_gray, avg_ssim_gray,\
         avg_psnr_mean_rgb, avg_ssim_mean_rgb = evaluate_model(model, loader, device)
         
+        outputs.append(model_outputs)
+
         print(f'{model.name}:')
         print(f"Average PSNR: {avg_psnr_gray:.2f} dB (grayscale), {avg_psnr_mean_rgb:.2f} db (RGB mean)")
         print(f"Average SSIM: {avg_ssim_gray:.4f} (grayscale), {avg_ssim_mean_rgb:.4f} db (RGB mean)")
 
     # compare model output
     idx = 5
-    output_compare(midterm100_dataset, models[1: ], outputs, idx)
+    # idx = 7
+    output_compare(midterm100_dataset, models[1: ], outputs[1: ], idx)
+    # output_compare(midterm100_dataset, models[1: ], outputs[1: ], idx, crop_range=(0, 128//2, 128//2, 128))
     
     # frequency domain
     freq_error_compare(midterm100_dataset, models, idx, device)

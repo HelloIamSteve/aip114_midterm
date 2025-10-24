@@ -113,7 +113,7 @@ if __name__ == '__main__':
     # noisy_img, original_img = cbsd68_dataset[test_idx]
     # print(noisy_img.shape)
 
-    noisy_img = (noisy_img.permute((2, 1, 0)).numpy() * 255).astype(np.uint8)
-    original_img = (original_img.permute((2, 1, 0)).numpy() * 255).astype(np.uint8)
+    noisy_img = (noisy_img.permute((1, 2, 0)).numpy() * 255).astype(np.uint8)
+    original_img = (original_img.permute((1, 2, 0)).numpy() * 255).astype(np.uint8)
     plt.imsave('sample_noisy.png', noisy_img)
     plt.imsave('sample_original.png', original_img)    

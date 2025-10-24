@@ -5,13 +5,18 @@ import matplotlib.pyplot as plt
 from dataset import *
 from model import *
 
-def output_compare(dataset, models, outputs, idx):
+def output_compare(dataset, models, outputs, idx, crop_range=None):
     img_noi = dataset[idx][0].cpu().numpy()
     img_noi = np.transpose(img_noi, (1, 2, 0))
     img_gt = dataset[idx][1].cpu().numpy()
     img_gt = np.transpose(img_gt, (1, 2, 0))
 
-    fig = plt.figure(figsize=(15, 7))
+    if crop_range:
+        y_start, y_end, x_start, x_end = crop_range
+        img_noi = img_noi[y_start:y_end, x_start:x_end, :]
+        img_gt = img_gt[y_start:y_end, x_start:x_end, :]
+
+    fig = plt.figure(figsize=(17, 7))
     plt.subplot(2, len(models), 1)
     plt.imshow(img_gt)
     plt.title('Ground truth')
@@ -20,8 +25,13 @@ def output_compare(dataset, models, outputs, idx):
     plt.title('Noisy')
 
     for i, model in enumerate(models):
+        output = outputs[i][idx]
+        if crop_range:
+            y_start, y_end, x_start, x_end = crop_range
+            output = output[y_start:y_end, x_start:x_end, :]
+
         plt.subplot(2, len(models), len(models)+1+i)
-        plt.imshow(outputs[idx])
+        plt.imshow(output)
         plt.title(model.name)
 
     plt.setp(plt.gcf().get_axes(), xticks=[], yticks=[])
@@ -89,7 +99,7 @@ def freq_error_compare(dataset, models, idx, device,
 
     if vmin is None: vmin = min(map(np.min, error_maps))
     if vmax is None: vmax = max(map(np.max, error_maps))
-
+    
     n = len(models)
     fig, axes = plt.subplots(2, n, figsize=(4*n, 7), constrained_layout=True)
     if n == 1:
@@ -116,5 +126,4 @@ def freq_error_compare(dataset, models, idx, device,
         ax.set_xlabel("Normalized frequency")
         ax.set_ylabel("log MSE")
 
-    plt.title(f'Log-magnitude frequency error of im_{idx}.png')
     fig.savefig('output_compare_freq.png', dpi=150)

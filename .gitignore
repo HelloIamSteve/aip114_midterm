@@ -221,4 +221,5 @@ CBSD68-dataset/
 *.zip
 
 # model result
-*results/
+*results/*
+!*results/*_best.pt
